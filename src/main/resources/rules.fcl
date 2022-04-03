@@ -1,0 +1,78 @@
+FUNCTION_BLOCK
+deltaVX
+
+VAR_INPUT
+speedX : REAL;
+distX : REAL;
+distY : REAL;
+END_VAR
+
+VAR_OUTPUT
+deltaVX : REAL;
+END_VAR
+
+FUZZIFY speedX
+TERM leftFast := (0, 1) (6, 1) (7, 0.50) (8, 0);
+TERM leftSlow := (6, 0) (7, 0.50) (8, 1) (14, 1) (15, 0.50) (16, 0);
+TERM zero := (14, 0) (15, 0.50) (16, 1) (17, 0.50) (18, 0);
+TERM rightSlow := (16, 0) (17, 0.50) (18, 1) (24, 1) (25, 0.50) (26, 0);
+TERM rightFast := (24, 0) (25, 0.50) (26, 1) (32,1);
+END_FUZZIFY
+
+FUZZIFY distX
+TERM leftFar    := (0, 1) (180, 1) (190, 0.50) (200, 0) ;
+TERM leftClose  := (180, 0) (190, 0.50) (200, 1) (220,1) (225, 0.50) (230, 0);
+TERM middle     := (220, 0) (225, 0.50) (230, 1) (270, 1) (275, 0.50) (280, 0);
+TERM rightClose := (270, 1) (275, 0.50) (280, 1) (300, 1) (310, 0.50) (320, 0) ;
+TERM rightFar   := (300, 0) (310, 0.50) (320, 1) (500, 1);
+END_FUZZIFY
+
+FUZZIFY distY
+TERM veryClose := (0, 1) (60, 1) (70, 0.50) (80, 0);
+TERM close := (70, 0) (75, 0.50) (80, 1) (110, 1) (120, 0.50) (130, 0) ;
+TERM far := (110, 0) (120, 0.50) (130, 1) (300, 1);
+END_FUZZIFY
+
+DEFUZZIFY deltaVX
+TERM slower := (0, 1) (2, 1) (3, 0.50) (4, 0);
+TERM medium := (2, 0) (3, 0.50) (4, 1) (6, 1) (7, 0.50) (8, 0);
+TERM faster := (3, 0) (6, 0) (7, 0.50) (8, 1) (10, 1);
+METHOD : COG;
+DEFAULT := 0;
+END_DEFUZZIFY
+
+RULEBLOCK first
+AND: MIN;
+ACT: MIN;
+
+RULE 0: IF distX IS middle AND speedX IS NOT zero AND speedX IS NOT leftSlow AND speedX IS NOT leftFast THEN deltaVX IS slower;
+RULE 1: IF distX IS middle AND speedX IS NOT zero AND speedX IS NOT rightSlow AND speedX IS NOT rightFast THEN deltaVX IS faster;
+
+RULE 2: IF distX IS leftFar AND distY IS veryClose THEN deltaVX IS faster;
+RULE 3: IF distX IS rightFar AND distY IS veryClose THEN deltaVX IS slower;
+
+RULE 4: IF distX IS rightClose AND distY IS veryClose AND speedX IS NOT leftFast THEN deltaVX IS slower;
+RULE 5: IF distX IS leftClose AND distY IS veryClose AND speedX IS NOT rightFast THEN deltaVX IS faster;
+
+RULE 6: IF distX IS rightClose AND distY IS veryClose AND speedX IS leftFast THEN deltaVX IS faster;
+RULE 7: IF distX IS leftClose AND distY IS veryClose AND speedX IS rightFast THEN deltaVX IS slower;
+
+RULE 8: IF distY IS close AND distX IS leftClose AND speedX IS NOT rightFast THEN deltaVX IS medium;
+RULE 9: IF distY IS close AND distX IS rightClose AND speedX IS NOT leftFast THEN deltaVX IS medium;
+
+RULE 10: IF distY IS close AND distX IS leftClose AND speedX IS rightFast THEN deltaVX IS slower;
+RULE 11: IF distY IS close AND distX IS rightClose AND speedX IS leftFast THEN deltaVX IS faster;
+
+RULE 12: IF distY IS close AND distX IS leftFar  THEN deltaVX IS faster;
+RULE 13: IF distY IS close AND distX IS rightFar THEN deltaVX IS slower;
+
+RULE 14: IF distY IS far AND distX IS leftClose AND speedX IS NOT zero AND speedX IS NOT leftFast AND speedX IS NOT leftSlow THEN deltaVX IS slower;
+RULE 15: IF distY IS far AND distX IS rightClose AND speedX IS NOT zero AND speedX IS NOT rightFast AND speedX IS NOT rightSlow THEN deltaVX IS faster;
+
+RULE 16: IF distY IS far AND (distX IS leftFar OR distX IS leftClose) THEN deltaVX IS faster;
+RULE 17: IF distY IS far AND (distX IS rightFar OR distX IS rightClose) THEN deltaVX IS slower;
+
+END_RULEBLOCK
+
+
+END_FUNCTION_BLOCK
